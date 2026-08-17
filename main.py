@@ -1,47 +1,64 @@
 import numpy as np
+import pandas as pd
 
 class Perceptron:
     def __init__(self):
         pass
 
-    def predicao(self, entradas, saidas, taxa_aprendizado, epocas):
+    def carregar_amostras(self, caminho_arquivo):
+        df = pd.read_csv(caminho_arquivo)
+
+        colunas_entrada = [coluna for coluna in df.columns if coluna != "categoria"]
+        entradas = df[colunas_entrada].values.tolist()
+        saidas = df["categoria"].apply(lambda c: 1 if c == "A" else -1).tolist()
+
+        return entradas, saidas, colunas_entrada
+
+    def treinamento(self, entradas, saidas, taxa_aprendizado, epocas, bias):
         self.entradas = entradas
         self.saidas = saidas
         self.taxa_aprendizado = taxa_aprendizado
         self.epocas = epocas
+        self.bias = bias
         melhor_acuracia = 0
         ultima_acuracia = 0 
+        p = []
 
-        p1, p2, pb = np.random.uniform(-1, 1), np.random.uniform(-1, 1), np.random.uniform(-1, 1)
+        for _ in range(len(entradas[0])):
+            p.append(np.random.uniform(-1, 1))
+        pb = np.random.uniform(-1, 1)
 
         for i in range(epocas):
             acertos = 0  
             for j in range(len(entradas)):
-                x1, x2 = entradas[j]
-                soma = ((x1*p1) + (x2*p2) + (1*pb))
+                soma = 0
+                for k in range(len(entradas[j])):
+                    soma += (p[k]*entradas[j][k])
+                soma += bias*pb
+
                 resultado = 1 if soma >= 0 else -1
                 erro = saidas[j] - resultado
 
                 if erro == 0:
                     acertos += 1
 
-                p1 = p1 + taxa_aprendizado*erro*x1
-                p2 = p2 + taxa_aprendizado*erro*x2
-                pb = pb + taxa_aprendizado*erro*1
-
+                for l in range(len(p)):
+                    p[l] = p[l] + taxa_aprendizado*erro*entradas[j][l]
+                pb = pb + taxa_aprendizado*erro*bias
 
                 print(f"Época: {i}\n"
                     + f"Amostra: {entradas[j]}\n"
                     + f"Saída Desejada: {saidas[j]}\n"
                     + f"Saída Obtida: {resultado}\n"
                     + f"Erro: {erro}\n"
-                    + f"Pesos: [{p1:.4f}, {p2:.4f}, {pb:.4f}]\n")             
+                    + f"Pesos: {p}\nPeso BIAS: {pb:.4f}\n")             
 
             acuracia = acertos/len(entradas)
             ultima_acuracia = acuracia
             if acuracia > melhor_acuracia:
                 melhor_acuracia = acuracia
-                melhor_peso = [p1, p2, pb]
+                melhor_peso = p.copy()
+                melhor_bias = pb
             print(f"Acurácia: {acuracia:.2%}")
             print(f"Acertos: {acertos}\n")
 
@@ -51,42 +68,52 @@ class Perceptron:
         if acuracia == 1:
             print("========FIM DO TREINAMENTO========")
             print(f"100% de acurácia atingida na época {i}")
-            print(f"Pesos: [{p1:.4f}, {p2:.4f}, {pb:.4f}]\n")
-            
+            print(f"Melhores Pesos: {melhor_peso}")
+            print(f"Melhor BIAS: {melhor_bias:.4f}")
+            print(f"Total de Épocas: {epocas}\n")
+
         else: 
             print("========FIM DO TREINAMENTO========")
+            print(f"Quantidade de Épocas: {epocas}")
             print(f"Melhor acurácia: {melhor_acuracia:.2%}")
             print(f"Última acurácia: {ultima_acuracia:.2%}")    
-            print(f"Melhores Pesos: [{melhor_peso[0]:.4f}, {melhor_peso[1]:.4f}, {melhor_peso[2]:.4f}]\n")
+            print(f"Melhores Pesos: {melhor_peso}")
+            print(f"Melhor BIAS: {melhor_bias:.4f}\n")
 
-        return p1, p2, pb
+        return melhor_peso, melhor_bias
 
-    def testar(self, pesos, entradas, saidas):
-        p1, p2, pb = pesos
-        acertos = 0
-        print("========INÍCIO DOS TESTES========")
-        for j in range(len(entradas)):
-            x1, x2 = entradas[j]
-            soma = ((x1*p1) + (x2*p2) + (1*pb))
-            resultado = 1 if soma >= 0 else -1
-            correto = resultado == saidas[j]
+    def nova_amostra(self, colunas_entrada):
+        print("========NOVA AMOSTRA========")
+        entrada = []
+        for colunas in colunas_entrada:
+            valor = float(input(f"Digite o valor de {colunas}: "))
+            entrada.append(valor)
+        return entrada
+    
+    def testar(self, pesos, pb, bias, amostra):
+        print("\n========FIM DO TESTE========")
+        soma = 0
+        for k in range(len(amostra)):
+            soma += (pesos[k]*amostra[k])
+        soma += bias*pb
 
-            if correto:
-                acertos +=1
-            print(f"Amostra: {entradas[j]}\n"
-                + f"Saída Desejada: {saidas[j]}\n"
-                + f"Saída Obtida: {resultado}\n"
-                + f"{'OK' if correto else 'ERRO'}\n")
-               
-        print("========FIM DOS TESTES========")            
-        acuracia = acertos/len(entradas)
-        print(f"Acurácia: {acuracia:.2%}")
-        print(f"Pesos: [{p1:.4f}, {p2:.4f}, {pb:.4f}]\n")
-        return acuracia
+        resultado = 1 if soma >= 0 else -1
 
-entradas = [[0.5, 0.7], [0.8, 1], [-1, 0.2], [1, 0.4]]
-saidas = [-1, -1, 1, 1]
+        print(f"Amostra: {amostra}\n"
+            + f"Saída Obtida: {resultado}\n"
+            + f"Categoria: {'A' if resultado==1 else 'B' if resultado==-1 else 'ERRO'}\n")
+        
+        return resultado
 
 percp = Perceptron()
-pesos = percp.predicao(entradas, saidas, 0.01, 10)
-percp.testar(pesos, entradas, saidas)
+
+bias = float(input("Digite o valor do BIAS: "))
+taxa_aprendizado = (float(input("Digite a taxa de aprendizagem: ")))
+epocas = (int(input("Digite o número de épocas: ")))
+
+entradas, saidas, colunas_entrada = percp.carregar_amostras("amostras_1200_lenta.csv")
+pesos, pb = percp.treinamento(entradas, saidas, taxa_aprendizado, epocas, bias)
+
+amostra = percp.nova_amostra(colunas_entrada)
+
+percp.testar(pesos, pb, bias, amostra)
