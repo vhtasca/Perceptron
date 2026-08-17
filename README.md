@@ -1,43 +1,49 @@
 # Perceptron
 
-Implementação de um Perceptron simples com função de ativação **relé bipolar**, desenvolvida para a disciplina de Inteligência Artificial.
+Implementação de um Perceptron simples com função de ativação **relé bipolar**, desenvolvida para a disciplina de Inteligência Artificial. O projeto lê um conjunto de amostras de um arquivo CSV, treina a rede para classificar as amostras em duas categorias (A ou B) e, ao final, permite testar uma nova entrada informada pelo usuário.
 
 ## Sobre
 
 O Perceptron é o modelo mais simples de rede neural artificial, capaz de aprender a separar dados linearmente separáveis em duas classes através de um processo de treinamento supervisionado baseado no ajuste iterativo de pesos.
 
-Neste projeto, a ativação utilizada é a **relé bipolar**, que classifica a saída do neurônio em dois valores possíveis:
+A ativação utilizada é a **relé bipolar**, que classifica a saída do neurônio em dois valores possíveis:
 
 ```
 f(soma) = 1  se soma >= 0
 f(soma) = -1 se soma < 0
 ```
 
-Por isso, as saídas esperadas do conjunto de dados também são representadas como `1` ou `-1`, em vez de `1` e `0`.
+As categorias do arquivo de amostras (`A` e `B`) são convertidas para essa representação bipolar (`1` e `-1`) no momento da leitura dos dados.
 
 ## Como funciona
 
-O treinamento segue a regra de aprendizado do Perceptron:
+### Treinamento
 
-1. Os pesos (`p1`, `p2`) e o bias (`pb`) são inicializados aleatoriamente.
-2. Para cada amostra de entrada, é calculada a soma ponderada:
+1. O usuário informa, no início da execução, o **valor do bias**, a **taxa de aprendizagem** e o **número de épocas**.
+2. As amostras são carregadas de um arquivo CSV (`amostras_1200_lenta.csv`), com uma coluna por atributo de entrada (`x1` a `x5`) e uma coluna `categoria` (`A`/`B`).
+3. Os pesos — um por atributo de entrada, mais o peso do bias — são inicializados aleatoriamente entre -1 e 1.
+4. Para cada amostra, é calculada a soma ponderada:
    ```
-   soma = (x1 * p1) + (x2 * p2) + (1 * pb)
+   soma = (x1*p1) + (x2*p2) + ... + (x5*p5) + (bias*pb)
    ```
-3. A soma passa pela função de ativação relé bipolar, gerando a saída obtida (`1` ou `-1`).
-4. O erro é calculado como a diferença entre a saída desejada e a saída obtida.
-5. Os pesos são ajustados proporcionalmente ao erro e à taxa de aprendizado:
+5. A soma passa pela função de ativação relé bipolar, gerando a saída obtida (`1` ou `-1`).
+6. O erro é calculado como a diferença entre a saída desejada e a saída obtida, e os pesos são ajustados proporcionalmente ao erro e à taxa de aprendizagem:
    ```
    peso = peso + taxa_aprendizado * erro * entrada
    ```
-6. O processo se repete a cada amostra, por várias épocas, até que a acurácia atinja 100% (ou até o número máximo de épocas ser alcançado).
+7. O processo se repete a cada amostra, por várias épocas. O treinamento é interrompido antecipadamente se a acurácia atingir 100% em alguma época.
+8. Ao final, são exibidos os pesos, o bias, o número de épocas executadas e a acurácia obtida (melhor e última, caso não tenha atingido 100%).
 
-Ao final do treinamento, os pesos resultantes são testados novamente contra todas as amostras — dessa vez sem nenhuma atualização de peso — para confirmar de forma independente que a acurácia reportada durante o treino realmente se sustenta com os pesos finais.
+### Teste de uma nova amostra
+
+Após o treinamento, o programa solicita ao usuário os valores de entrada de uma nova amostra (uma por atributo) e classifica essa amostra usando os pesos treinados, exibindo se ela pertence à categoria A ou B.
 
 ## Estrutura
 
-- `Perceptron.predicao(entradas, saidas, taxa_aprendizado, epocas)`: treina o Perceptron e retorna os pesos finais (`p1`, `p2`, `pb`).
-- `Perceptron.testar(pesos, entradas, saidas)`: avalia os pesos treinados contra um conjunto de entradas e saídas, exibindo o resultado por amostra e a acurácia final.
+- `Perceptron.carregar_amostras(caminho_arquivo)`: lê o arquivo CSV com pandas, separando os atributos de entrada da coluna de categoria, e converte as categorias (`A`/`B`) para saída bipolar (`1`/`-1`).
+- `Perceptron.treinamento(entradas, saidas, taxa_aprendizado, epocas, bias)`: treina o Perceptron e retorna os melhores pesos e o melhor peso de bias encontrados durante o treinamento.
+- `Perceptron.nova_amostra(colunas_entrada)`: solicita ao usuário os valores de uma nova amostra a ser classificada.
+- `Perceptron.testar(pesos, pb, bias, amostra)`: classifica uma amostra com os pesos treinados e exibe se ela é categoria A ou B.
 
 ## Como executar
 
@@ -45,11 +51,16 @@ Ao final do treinamento, os pesos resultantes são testados novamente contra tod
 python main.py
 ```
 
-O programa exibe, para cada época, os detalhes de cada amostra processada (entrada, saída desejada, saída obtida, erro e pesos atualizados), a acurácia da época, e ao final, os pesos resultantes do treinamento e o resultado do teste de verificação.
+O programa pede o bias, a taxa de aprendizagem e o número de épocas, treina o Perceptron com as amostras do arquivo CSV (exibindo o progresso por amostra e por época), e em seguida solicita os valores de uma nova amostra para classificá-la como categoria A ou B.
 
-## Exemplo de dados
+## Arquivo de amostras
 
-```python
-entradas = [[0.5, 0.7], [0.8, 1], [-1, 0.2], [1, 0.4]]
-saidas = [-1, -1, 1, 1]
+O arquivo `amostras_1200_lenta.csv` contém 1200 amostras com 5 atributos de entrada (`x1` a `x5`) e uma coluna `categoria` com os valores `A` ou `B`:
+
+```
+x1,x2,x3,x4,x5,categoria
+-6.7391,-3.2408,3.5545,2.3307,9.0987,A
+-1.7720,8.7928,8.5350,4.3114,-9.6108,A
+5.9480,8.0151,0.4773,-6.0567,-6.3841,B
+...
 ```
